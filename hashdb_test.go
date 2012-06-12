@@ -1,29 +1,34 @@
+// Copyright 2012 marpie. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package hashdb
 
 import (
+	"crypto/md5"
 	"testing"
 )
 
 func TestOpenDatabase(t *testing.T) {
-	_, err := OpenDatabase(":memory:", 0)
+	_, err := OpenDatabase(":memory:", md5.New(), 0)
 	if err != nil {
 		t.Fatalf("OpenDatabase failed with error: %s", err)
 	}
 }
 
 func TestHashDbPut(t *testing.T) {
-	db, _ := OpenDatabase(":memory:", 1)
+	db, _ := OpenDatabase(":memory:", md5.New(), 1)
 
-	err := db.Put("5f87e0f786e60b554ec522ce85ddc930", "MT1992")
+	err := db.Put("MT1992")
 	if err != nil {
 		t.Fatalf("Put failed with error: %s", err)
 	}
 }
 
 func TestHashDbGetExact(t *testing.T) {
-	db, _ := OpenDatabase(":memory:", 1)
+	db, _ := OpenDatabase(":memory:", md5.New(), 1)
 
-	db.Put("5f87e0f786e60b554ec522ce85ddc930", "MT1992")
+	db.Put("MT1992")
 
 	password, err := db.GetExact("5f87e0f786e60b554ec522ce85ddc930")
 	if err != nil {
@@ -36,9 +41,9 @@ func TestHashDbGetExact(t *testing.T) {
 }
 
 func TestHashDbGetLike(t *testing.T) {
-	db, _ := OpenDatabase(":memory:", 1)
-	db.Put("5f87e0f786e60b554ec522ce85ddc930", "MT1992")
-	db.Put("9f5e22b402096fa932298322e43fc3ca", "SAUL69")
+	db, _ := OpenDatabase(":memory:", md5.New(), 1)
+	db.Put("MT1992")
+	db.Put("SAUL69")
 
 	result, err := db.GetLike("e0f7")
 	if err != nil {

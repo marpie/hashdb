@@ -1,3 +1,7 @@
+// Copyright 2012 marpie. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
 package hashdb
 
 import (
@@ -14,4 +18,6 @@ var (
 	ErrHashTooShort           = errors.New("The length of the hash is too short.")
 	ErrDatastoreNotFound      = errors.New("The requested datastore was not found.")
 	ErrDirectoryNotFound      = errors.New("The directory doesn't exist.")
+	ErrPasswordMissing        = errors.New("Password parameter is empty.")
+	ErrWrongHashFormat        = errors.New("Hash-format is wrong.")
 )

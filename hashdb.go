@@ -2,38 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-/*
-Package hashdb provides a database for hex-based hashes.
-
-This package needs kuroneko's sqlite3 library
-(https://github.com/kuroneko/gosqlite3).
-
-
-Sample
-
-  // Create a new database in memory.
-  db, err := OpenDatabase(":memory:", 10)
-  if err != nil {
-    return err
-  }
-
-  // Add new entry
-  err = db.Put("5f87e0f786e60b554ec522ce85ddc930", "MT1992")
-  if err != nil {
-    return err
-  }
-
-  // Get entry
-  password, err := db.GetExact("5f87e0f786e60b554ec522ce85ddc930")
-  if err != nil {
-    return err
-  }
-
-*/
 package hashdb
 
 import (
 	"fmt"
+	"hash"
+	"io"
 	"os"
 	"path/filepath"
 )
@@ -45,12 +19,12 @@ type LookupTable map[string]*Datastore
 type HashDB struct {
 	directory   string
 	lookupTable LookupTable
+	hashFunc    hash.Hash
 }
 
 // OpenDatabase creates or opens a new HashDB instance. directory accepts a
 // valid directory or ":memory:" if you want the database only in RAM.
-func OpenDatabase(directory string, maxGetHandler int) (db *HashDB, err error) {
-
+func OpenDatabase(directory string, hashFunc hash.Hash, maxGetHandler int) (db *HashDB, err error) {
 	if directory != ":memory:" {
 		// check if directory exists
 		fi, err := os.Stat(directory)
@@ -64,6 +38,7 @@ func OpenDatabase(directory string, maxGetHandler int) (db *HashDB, err error) {
 
 	db = new(HashDB)
 	db.lookupTable = make(LookupTable)
+	db.hashFunc = hashFunc
 
 	// build lookup table
 	for _, x := range HexAlphabet {
@@ -102,8 +77,21 @@ func (db *HashDB) getDatastoreByHash(hash string) (ds *Datastore, err error) {
 	return ds, nil
 }
 
-// Put stores a new hash in the database.
-func (db *HashDB) Put(hash string, password string) PutResponse {
+func (db *HashDB) getHash(password string) string {
+	db.hashFunc.Reset()
+	io.WriteString(db.hashFunc, password)
+	return fmt.Sprintf("%x", db.hashFunc.Sum(nil))
+}
+
+// Put stores a new hash in the database. The hash is stored as lower-case.
+func (db *HashDB) Put(password string) PutResponse {
+	if password == "" {
+		return ErrPasswordMissing
+	}
+
+	// Calculate hash
+	hash := db.getHash(password)
+
 	ds, err := db.getDatastoreByHash(hash)
 	if err != nil {
 		return err
@@ -111,7 +99,8 @@ func (db *HashDB) Put(hash string, password string) PutResponse {
 	return ds.Put(hash, password)
 }
 
-// GetExact searches for the hash in the database.
+// GetExact searches for the hash in the database. 
+// The hash parameter has to be lower-case.
 func (db *HashDB) GetExact(hash string) (password string, err error) {
 	ds, err := db.getDatastoreByHash(hash)
 	if err != nil {
