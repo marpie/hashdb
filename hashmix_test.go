@@ -22,6 +22,17 @@ func TestHashMixPut(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Put failed with error: %s", err)
 	}
+
+  md5, sha1, err := mix.Count()
+  if err != nil {
+    t.Fatalf("Count failed with error: %s", err)
+  }
+  if md5 != 1 {
+    t.Fatalf("Count(MD5) should be 1 but got: %d", md5)
+  }
+  if sha1 != 1 {
+    t.Fatalf("Count(SHA1) should be 1 but got: %d", sha1)
+  }
 }
 
 func TestHashMixGetMD5(t *testing.T) {

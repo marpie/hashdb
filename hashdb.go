@@ -63,6 +63,18 @@ func OpenDatabase(directory string, hashFunc hash.Hash, maxGetHandler int) (db *
 	return db, nil
 }
 
+// Count returns the number of entries in the database.
+func (db *HashDB) Count() (result int64, err error) {
+  for _, ds := range db.lookupTable {
+    count, err := ds.Count()
+    if err != nil {
+      return -1, err
+    }
+    result += count
+  }
+  return result, nil
+}
+
 func (db *HashDB) getDatastoreByHash(hash string) (ds *Datastore, err error) {
 	if len(hash) < 2 {
 		return nil, ErrHashTooShort

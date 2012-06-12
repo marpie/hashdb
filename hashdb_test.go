@@ -23,6 +23,14 @@ func TestHashDbPut(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Put failed with error: %s", err)
 	}
+
+  count, err := db.Count()
+  if err != nil {
+    t.Fatalf("Count() failed with error: %s", err)
+  }
+  if count != 1 {
+    t.Fatalf("Count() should be 1 but got: %d", count)
+  }
 }
 
 func TestHashDbGetExact(t *testing.T) {

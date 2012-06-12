@@ -10,6 +10,7 @@ import (
 
 type Datastore struct {
 	db        *sqlite.Database
+  countStmt *sqlite.Statement
 	putChan   chan *PutRequest
 	exactChan chan *GetRequest
 	likeChan  chan *GetRequest
@@ -35,6 +36,11 @@ func OpenDatastore(name string, maxGetHandler int) (ds *Datastore, err error) {
 		return nil, err
 	}
 
+  ds.countStmt, err = ds.db.Prepare("SELECT COUNT(*) FROM data;")
+  if err != nil {
+    return nil, err
+  }
+
 	return ds, nil
 }
 
@@ -58,6 +64,19 @@ func (ds *Datastore) GetExact(hash string) (password string, err error) {
 func (ds *Datastore) GetLike(request *GetRequest) {
 	ds.likeChan <- request
 	return
+}
+
+// Count returns the number of entries in the datastore.
+func (ds *Datastore) Count() (int64, error) {
+  err, _ := ds.countStmt.BindAll()
+  if err != nil {
+    return -1, err
+  }
+  err = ds.countStmt.Step()
+  if err != sqlite.ROW {
+    return -1, err
+  }
+  return ds.countStmt.Column(0).(int64), nil
 }
 
 // initializeDatabase checks if the database already exists otherwise it 

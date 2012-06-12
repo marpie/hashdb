@@ -36,6 +36,16 @@ func OpenMix(directory string, maxPerDatabaseHandler int) (hm *HashMix, err erro
 	return hm, nil
 }
 
+// Count returns the number of entries in the databases.
+func (hm *HashMix) Count() (md5_count int64, sha1_count int64, err error) {
+  md5_count, err = hm.md5.Count()
+  if err != nil {
+    return -1, -1, err
+  }
+  sha1_count, err = hm.sha1.Count()
+  return md5_count, sha1_count, err
+}
+
 // Put stores the new password in the MD5 and SHA1 database.
 func (hm *HashMix) Put(password string) PutResponse {
 	err := hm.md5.Put(password)
