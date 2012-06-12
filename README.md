@@ -5,6 +5,7 @@ Package hashdb provides a database for hex-based hashes.
 
 Sample
 ------
+```go
   // Create a new database in memory.
   db, err := OpenDatabase(":memory:", 10)
   if err != nil {
@@ -22,4 +23,5 @@ Sample
   if err != nil {
       return err
   }
+```
 
