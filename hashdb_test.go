@@ -19,24 +19,39 @@ func TestOpenDatabase(t *testing.T) {
 func TestHashDbPut(t *testing.T) {
 	db, _ := OpenDatabase(":memory:", md5.New(), 1)
 
-	err := db.Put("MT1992")
-	if err != nil {
-		t.Fatalf("Put failed with error: %s", err)
+	// Create communication channels
+	respChan := make(chan *PutResponse, 1)
+	redirectChan := make(chan *PutResponse, 1)
+	// Set up "redirect"
+	go func(respChan chan *PutResponse, redirectChan chan *PutResponse) {
+		response := <-respChan
+		redirectChan <- response
+	}(respChan, redirectChan)
+
+	db.Put("MT1992", respChan)
+
+	// wait for redirect
+	response := <-redirectChan
+
+	if response.err != nil {
+		t.Fatalf("Put failed with error: %s", response.err)
 	}
 
-  count, err := db.Count()
-  if err != nil {
-    t.Fatalf("Count() failed with error: %s", err)
-  }
-  if count != 1 {
-    t.Fatalf("Count() should be 1 but got: %d", count)
-  }
+	count, err := db.Count()
+	if err != nil {
+		t.Fatalf("Count() failed with error: %s", err)
+	}
+	if count != 1 {
+		t.Fatalf("Count() should be 1 but got: %d", count)
+	}
 }
 
 func TestHashDbGetExact(t *testing.T) {
 	db, _ := OpenDatabase(":memory:", md5.New(), 1)
 
-	db.Put("MT1992")
+	respChan := make(chan *PutResponse, 1)
+	db.Put("MT1992", respChan)
+	<-respChan // discard result
 
 	password, err := db.GetExact("5f87e0f786e60b554ec522ce85ddc930")
 	if err != nil {
@@ -50,8 +65,12 @@ func TestHashDbGetExact(t *testing.T) {
 
 func TestHashDbGetLike(t *testing.T) {
 	db, _ := OpenDatabase(":memory:", md5.New(), 1)
-	db.Put("MT1992")
-	db.Put("SAUL69")
+
+	respChan := make(chan *PutResponse, 1)
+	db.Put("MT1992", respChan)
+	<-respChan // discard result
+	db.Put("SAUL69", respChan)
+	<-respChan
 
 	result, err := db.GetLike("e0f7")
 	if err != nil {

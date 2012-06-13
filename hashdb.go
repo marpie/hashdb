@@ -65,14 +65,14 @@ func OpenDatabase(directory string, hashFunc hash.Hash, maxGetHandler int) (db *
 
 // Count returns the number of entries in the database.
 func (db *HashDB) Count() (result int64, err error) {
-  for _, ds := range db.lookupTable {
-    count, err := ds.Count()
-    if err != nil {
-      return -1, err
-    }
-    result += count
-  }
-  return result, nil
+	for _, ds := range db.lookupTable {
+		count, err := ds.Count()
+		if err != nil {
+			return -1, err
+		}
+		result += count
+	}
+	return result, nil
 }
 
 func (db *HashDB) getDatastoreByHash(hash string) (ds *Datastore, err error) {
@@ -96,19 +96,26 @@ func (db *HashDB) getHash(password string) string {
 }
 
 // Put stores a new hash in the database. The hash is stored as lower-case.
-func (db *HashDB) Put(password string) PutResponse {
+func (db *HashDB) Put(password string, resultChan chan *PutResponse) {
 	if password == "" {
-		return ErrPasswordMissing
+		resultChan <- &PutResponse{password: password, hash: "", err: ErrPasswordMissing}
+		return
 	}
 
-	// Calculate hash
-	hash := db.getHash(password)
+	// Fire up a new Goroutine to handle the database insert.
+	go func(password string, resultChan chan *PutResponse) {
+		// Calculate hash
+		hash := db.getHash(password)
 
-	ds, err := db.getDatastoreByHash(hash)
-	if err != nil {
-		return err
-	}
-	return ds.Put(hash, password)
+		ds, err := db.getDatastoreByHash(hash)
+		if err != nil {
+			resultChan <- &PutResponse{password: password, hash: hash, err: err}
+			return
+		}
+		resultChan <- ds.Put(hash, password)
+	}(password, resultChan)
+
+	return
 }
 
 // GetExact searches for the hash in the database. 

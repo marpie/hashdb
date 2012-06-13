@@ -10,7 +10,7 @@ import (
 
 type Datastore struct {
 	db        *sqlite.Database
-  countStmt *sqlite.Statement
+	countStmt *sqlite.Statement
 	putChan   chan *PutRequest
 	exactChan chan *GetRequest
 	likeChan  chan *GetRequest
@@ -36,17 +36,17 @@ func OpenDatastore(name string, maxGetHandler int) (ds *Datastore, err error) {
 		return nil, err
 	}
 
-  ds.countStmt, err = ds.db.Prepare("SELECT COUNT(*) FROM data;")
-  if err != nil {
-    return nil, err
-  }
+	ds.countStmt, err = ds.db.Prepare("SELECT COUNT(*) FROM data;")
+	if err != nil {
+		return nil, err
+	}
 
 	return ds, nil
 }
 
 // Put creates a new entry in the database.
-func (ds *Datastore) Put(hash string, password string) PutResponse {
-	resp_chan := make(chan PutResponse, 1)
+func (ds *Datastore) Put(hash string, password string) *PutResponse {
+	resp_chan := make(chan *PutResponse, 1)
 	ds.putChan <- &PutRequest{hash: hash, password: password, response: resp_chan}
 	return <-resp_chan
 }
@@ -68,15 +68,15 @@ func (ds *Datastore) GetLike(request *GetRequest) {
 
 // Count returns the number of entries in the datastore.
 func (ds *Datastore) Count() (int64, error) {
-  err, _ := ds.countStmt.BindAll()
-  if err != nil {
-    return -1, err
-  }
-  err = ds.countStmt.Step()
-  if err != sqlite.ROW {
-    return -1, err
-  }
-  return ds.countStmt.Column(0).(int64), nil
+	err, _ := ds.countStmt.BindAll()
+	if err != nil {
+		return -1, err
+	}
+	err = ds.countStmt.Step()
+	if err != sqlite.ROW {
+		return -1, err
+	}
+	return ds.countStmt.Column(0).(int64), nil
 }
 
 // initializeDatabase checks if the database already exists otherwise it 
@@ -181,19 +181,23 @@ func putHandler(ds *Datastore, initChan chan error) {
 			break
 		}
 
+		response := &PutResponse{request.password, request.hash, nil}
+
 		err, _ := statement.BindAll(request.hash, request.password)
 		if err != nil {
-			request.response <- err
+			response.err = err
+			request.response <- response
 			continue
 		}
 
 		err = statement.Step()
 		if err != nil {
-			request.response <- err
+			response.err = err
+			request.response <- response
 			continue
 		}
 
-		request.response <- nil
+		request.response <- response
 	}
 }
 

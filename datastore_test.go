@@ -22,18 +22,18 @@ func TestDatastorePut(t *testing.T) {
 		t.Fatalf("Opening database error: %s", err)
 	}
 
-	err = ds.Put("5f87e0f786e60b554ec522ce85ddc930", "MT1992")
-	if err != nil {
-		t.Fatalf("Put failed: %s", err)
+	response := ds.Put("5f87e0f786e60b554ec522ce85ddc930", "MT1992")
+	if response.err != nil {
+		t.Fatalf("Put failed: %s", response.err)
 	}
 
-  count, err := ds.Count()
-  if err != nil {
-    t.Fatalf("Count() failed: %s", err)
-  }
-  if count != 1 {
-    t.Fatalf("Count should be 1 but got: %d", count)
-  }
+	count, err := ds.Count()
+	if err != nil {
+		t.Fatalf("Count() failed: %s", err)
+	}
+	if count != 1 {
+		t.Fatalf("Count should be 1 but got: %d", count)
+	}
 
 	password, err := ds.GetExact("5f87e0f786e60b554ec522ce85ddc930")
 	if err != nil {
@@ -48,23 +48,23 @@ func TestDatastorePut(t *testing.T) {
 func TestDatastorePut2(t *testing.T) {
 	ds, _ := OpenDatastore(":memory:", 2)
 
-	err := ds.Put("world!", "hello")
-	if err != nil {
-		t.Fatalf("Put failed: %s", err)
+	response := ds.Put("world!", "hello")
+	if response.err != nil {
+		t.Fatalf("Put failed: %s", response.err)
 	}
 
-	err = ds.Put("World!", "Hello")
-	if err != nil {
-		t.Fatalf("Put failed: %s", err)
+	response = ds.Put("World!", "Hello")
+	if response.err != nil {
+		t.Fatalf("Put failed: %s", response.err)
 	}
 
-  count, err := ds.Count()
-  if err != nil {
-    t.Fatalf("Count() failed: %s", err)
-  }
-  if count != 2 {
-    t.Fatalf("Count should be 2 but got: %d", count)
-  }
+	count, err := ds.Count()
+	if err != nil {
+		t.Fatalf("Count() failed: %s", err)
+	}
+	if count != 2 {
+		t.Fatalf("Count should be 2 but got: %d", count)
+	}
 
 	password, _ := ds.GetExact("world!")
 	if password != "hello" {
@@ -80,14 +80,14 @@ func TestDatastorePut2(t *testing.T) {
 func TestDatastoreGetLike(t *testing.T) {
 	ds, _ := OpenDatastore(":memory:", 2)
 
-	err := ds.Put("world!", "hello")
-	if err != nil {
-		t.Fatalf("Put failed: %s", err)
+	response := ds.Put("world!", "hello")
+	if response.err != nil {
+		t.Fatalf("Put failed: %s", response.err)
 	}
 
-	err = ds.Put("World", "Hello")
-	if err != nil {
-		t.Fatal("Put failed: %s", err)
+	response = ds.Put("World", "Hello")
+	if response.err != nil {
+		t.Fatal("Put failed: %s", response.err)
 	}
 
 	request := &GetRequest{request: "world%", response: make(chan *GetResponse)}
@@ -99,7 +99,7 @@ func TestDatastoreGetLike(t *testing.T) {
 			break
 		}
 		if resp.err != nil {
-			t.Fatalf("Like failed with error: %s", err)
+			t.Fatalf("Like failed with error: %s", resp.err)
 			continue
 		}
 

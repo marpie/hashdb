@@ -15,10 +15,14 @@ type GetRequest struct {
 	response chan *GetResponse
 }
 
-type PutResponse error
+type PutResponse struct {
+	password string
+	hash     string
+	err      error
+}
 
 type PutRequest struct {
 	hash     string
 	password string
-	response chan PutResponse
+	response chan *PutResponse
 }
